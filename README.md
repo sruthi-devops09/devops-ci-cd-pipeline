@@ -1,19 +1,27 @@
-# devops-ci-cd-pipeline
-CI/CD Pipeline using Jenkins + Docker + Kubernetes (AKS).
+# DevOps CI/CD Pipeline: Jenkins + Docker + Kubernetes (AKS)
 
+This project demonstrates a complete CI/CD pipeline using Jenkins to build, test, scan, and deploy a Node.js application into an AKS cluster via Helm charts.
 
-Actions performed:
------------------------------------------
-Pull code from GitHub
+## 🔧 Tools Used
 
-Run unit tests (npm test)
+- Jenkins
+- Docker
+- Kubernetes (AKS)
+- Helm
+- Trivy (Security Scanning)
+- Slack (Optional notifications)
 
-Run Trivy scan on the Docker image
+## 📦 Pipeline Stages
 
-Build Docker image
+1. Checkout Code
+2. Run Tests (Mocha)
+3. Docker Build
+4. Trivy Security Scan
+5. Push to DockerHub
+6. Deploy to AKS via Helm
 
-Push to DockerHub
+## 🔍 Pre-reqs
 
-Deploy to AKS using Helm
-
-Notify on Slack/MS Teams (optional)
+- DockerHub credentials (Jenkins secret: `dockerhub-creds`)
+- AKS cluster with `kubectl` + `helm` access from Jenkins
+- Trivy installed on Jenkins node
