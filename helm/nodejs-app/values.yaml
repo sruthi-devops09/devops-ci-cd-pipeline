@@ -1,7 +1,7 @@
 replicaCount: 2
 
 image:
-  repository: sruthikarri/nodejs-app
+  repository: sruthi-devops/nodejs-app
   tag: "latest"
   pullPolicy: IfNotPresent
 
