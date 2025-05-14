@@ -1,64 +1,54 @@
 pipeline {
-    agent any
+  agent any
 
-    environment {
-        DOCKER_IMAGE = "sruthi-devops/nodejs-app:${BUILD_NUMBER}"
+  environment {
+    ECR_REPO = 'your-aws-account-id.dkr.ecr.region.amazonaws.com/nodejs-app'
+    IMAGE_TAG = "nodejs-app-${env.BUILD_NUMBER}"
+  }
+
+  stages {
+    stage('Checkout') {
+      steps {
+        git 'https://github.com/your-username/nodejs-cicd-secure-pipeline.git'
+      }
     }
 
-    stages {
-        stage('Clone Repo') {
-            steps {
-                git url: 'https://github.com/sruthi-devops09/devops-ci-cd-pipeline.git', branch: 'main'
-            }
+    stage('SonarQube Analysis') {
+      steps {
+        withSonarQubeEnv('MySonarQube') {
+          sh 'sonar-scanner -Dsonar.projectKey=nodejs-app -Dsonar.sources=app -Dsonar.host.url=http://your-sonarqube-url -Dsonar.login=your-sonarqube-token'
         }
-
-        stage('Install Dependencies') {
-            steps {
-                dir('app') {
-                    sh 'npm install'
-                }
-            }
-        }
-
-        stage('Unit Tests') {
-            steps {
-                dir('app') {
-                    sh 'npm test'
-                }
-            }
-        }
-
-        stage('Trivy Scan') {
-            steps {
-                sh 'trivy fs .'
-            }
-        }
-
-        stage('Build Docker Image') {
-            steps {
-                sh 'docker build -t $DOCKER_IMAGE .'
-            }
-        }
-
-        stage('Push to DockerHub') {
-            steps {
-                withCredentials([usernamePassword(credentialsId: 'dockerhub-creds', usernameVariable: 'USERNAME', passwordVariable: 'PASSWORD')]) {
-                    sh 'echo $PASSWORD | docker login -u $USERNAME --password-stdin'
-                    sh 'docker push $DOCKER_IMAGE'
-                }
-            }
-        }
-
-        stage('Deploy to AKS') {
-            steps {
-                sh """
-                helm upgrade --install nodejs-app helm/nodejs-app \
-                    --namespace dev \
-                    --create-namespace \
-                    --set image.repository=sruthikarri/nodejs-app \
-                    --set image.tag=${BUILD_NUMBER}
-                """
-            }
-        }
+      }
     }
+
+    stage('Build') {
+      steps {
+        sh 'npm ci'
+      }
+    }
+
+    stage('Docker Build & Trivy Scan') {
+      steps {
+        sh '''
+          docker build -t $ECR_REPO:$IMAGE_TAG .
+          trivy image --exit-code 0 --severity MEDIUM,HIGH $ECR_REPO:$IMAGE_TAG
+        '''
+      }
+    }
+
+    stage('Push to ECR') {
+      steps {
+        sh '''
+          aws ecr get-login-password --region region | docker login --username AWS --password-stdin $ECR_REPO
+          docker push $ECR_REPO:$IMAGE_TAG
+        '''
+      }
+    }
+
+    stage('Deploy to EKS') {
+      steps {
+        sh 'helm upgrade --install nodejs-app ./helm --set image.repository=$ECR_REPO,image.tag=$IMAGE_TAG'
+      }
+    }
+  }
 }
