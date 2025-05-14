@@ -1,25 +1,8 @@
 replicaCount: 2
-
 image:
-  repository: sruthi-devops/nodejs-app
-  tag: "latest"
+  repository: your-aws-account-id.dkr.ecr.region.amazonaws.com/nodejs-app
+  tag: latest
   pullPolicy: IfNotPresent
-
 service:
   type: LoadBalancer
   port: 80
-  targetPort: 3000
-
-resources:
-  limits:
-    cpu: 500m
-    memory: 256Mi
-  requests:
-    cpu: 250m
-    memory: 128Mi
-
-nodeSelector: {}
-
-tolerations: []
-
-affinity: {}
